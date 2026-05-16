@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zmluvy datum="2026-05-14">
+  <zmluva>
+    <ID>12345</ID>
+    <nazov>Test Contract 1</nazov>
+    <zs1>Ministerstvo financií SR</zs1>
+    <zs2>ABC Company s.r.o.</zs2>
+    <ico>12345678</ico>
+    <sidlo>Bratislava</sidlo>
+    <ico1>98765432</ico1>
+    <sidlo1>Bratislava</sidlo1>
+    <predmet>Test predmet</predmet>
+    <datum_ucinnost>2026-01-15</datum_ucinnost>
+    <datum_platnost_do>2027-01-15</datum_platnost_do>
+    <suma_zmluva>50 000</suma_zmluva>
+    <suma_spolu>50 000</suma_spolu>
+    <datum_zverejnene>2026-05-14 10:30:00</datum_zverejnene>
+    <typ>1</typ>
+    <druh>1</druh>
+    <rezort>100</rezort>
+    <poznamka>Test note</poznamka>
+    <stav>1</stav>
+    <prilohy>
+      <priloha>
+        <ID>att001</ID>
+        <nazov>Zmluva.pdf</nazov>
+        <dokument>zmluva_12345.pdf</dokument>
+        <dokument1>zmluva_12345.txt</dokument1>
+        <velkost>102400</velkost>
+        <velkost1>20480</velkost1>
+      </priloha>
+    </prilohy>
+  </zmluva>
+  <zmluva>
+    <ID>12346</ID>
+    <nazov>Zero price contract</nazov>
+    <zs1>Mesto Košice</zs1>
+    <zs2></zs2>
+    <ico></ico>
+    <sidlo></sidlo>
+    <ico1>11111111</ico1>
+    <sidlo1>Košice</sidlo1>
+    <predmet>Bezplatný prenajom</predmet>
+    <datum_ucinnost>2026-03-01</datum_ucinnost>
+    <datum_platnost_do>2026-12-31</datum_platnost_do>
+    <suma_zmluva>0</suma_zmluva>
+    <suma_spolu>0</suma_spolu>
+    <datum_zverejnene>2026-05-14 08:00:00</datum_zverejnene>
+    <typ>1</typ>
+    <druh>2</druh>
+    <rezort>200</rezort>
+    <prilohy></prilohy>
+  </zmluva>
+  <zmluva>
+    <ID>12347</ID>
+    <nazov>Multi attachment contract</nazov>
+    <zs1>Ministerstvo zdravotníctva SR</zs1>
+    <zs2>HealthTech a.s.</zs2>
+    <ico>22222222</ico>
+    <sidlo>Žilina</sidlo>
+    <ico1>33333333</ico1>
+    <sidlo1>Bratislava</sidlo1>
+    <predmet>Dodávka zdravotníckych technológií</predmet>
+    <datum_ucinnost>2026-02-01</datum_ucinnost>
+    <datum_platnost_do>2028-02-01</datum_platnost_do>
+    <suma_zmluva>250 000</suma_zmluva>
+    <suma_spolu>280 000</suma_spolu>
+    <datum_zverejnene>2026-05-14 12:00:00</datum_zverejnene>
+    <typ>2</typ>
+    <druh>1</druh>
+    <rezort>300</rezort>
+    <popis>Complex procurement</popis>
+    <prilohy>
+      <priloha>
+        <ID>att010</ID>
+        <nazov>Zmluva.pdf</nazov>
+        <dokument>zmluva_12347.pdf</dokument>
+        <velkost>204800</velkost>
+      </priloha>
+      <priloha>
+        <ID>att011</ID>
+        <nazov>Príloha1.pdf</nazov>
+        <dokument>priloha1_12347.pdf</dokument>
+        <velkost>102400</velkost>
+      </priloha>
+      <priloha>
+        <ID>att012</ID>
+        <nazov>Príloha2.pdf</nazov>
+        <dokument>priloha2_12347.pdf</dokument>
+        <dokument1>priloha2_12347.txt</dokument1>
+        <velkost>51200</velkost>
+        <velkost1>10240</velkost1>
+      </priloha>
+    </prilohy>
+  </zmluva>
+  <zmluva>
+    <ID>12348</ID>
+    <nazov></nazov>
+    <prilohy></prilohy>
+  </zmluva>
+  <zmluva>
+    <ID>12349</ID>
+    <nazov>Slovak price format contract</nazov>
+    <zs1>Ministerstvo školstva SR</zs1>
+    <zs2>EduServ s.r.o.</zs2>
+    <ico>44444444</ico>
+    <sidlo>Prešov</sidlo>
+    <ico1>55555555</ico1>
+    <sidlo1>Bratislava</sidlo1>
+    <predmet>Vzdelávacie služby</predmet>
+    <datum_ucinnost>2026-04-01</datum_ucinnost>
+    <datum_platnost_do>2027-04-01</datum_platnost_do>
+    <suma_zmluva>1 200,50 EUR</suma_zmluva>
+    <suma_spolu>1 500,00 EUR</suma_spolu>
+    <datum_zverejnene>2026-05-14 14:00:00</datum_zverejnene>
+    <typ>1</typ>
+    <druh>1</druh>
+    <rezort>400</rezort>
+    <internapozn>Internal note</internapozn>
+    <uvo>1</uvo>
+    <prilohy>
+      <priloha>
+        <ID>att020</ID>
+        <nazov>Zmluva.pdf</nazov>
+        <dokument>zmluva_12349.pdf</dokument>
+        <velkost>51200</velkost>
+      </priloha>
+    </prilohy>
+  </zmluva>
+</zmluvy>
