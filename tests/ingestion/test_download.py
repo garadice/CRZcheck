@@ -88,3 +88,86 @@ class TestCRZDownloader:
         with patch("app.ingestion.crz.download.datetime") as mock_dt:
             mock_dt.now.return_value.hour = 20
             assert downloader._rate_limit_delay() == 0.4
+
+    def test_validate_redirect_within_crz(self):
+        response = MagicMock(spec=httpx.Response)
+        response.history = [MagicMock()]
+        response.url = MagicMock()
+        response.url.host = "www.crz.gov.sk"
+        CRZDownloader._validate_redirect(response)
+
+    def test_validate_redirect_outside_crz(self):
+        response = MagicMock(spec=httpx.Response)
+        response.history = [MagicMock()]
+        response.url = MagicMock()
+        response.url.host = "evil.com"
+        with pytest.raises(httpx.TransportError, match="Redirect outside CRZ"):
+            CRZDownloader._validate_redirect(response)
+
+    def test_validate_redirect_subdomain_crz(self):
+        response = MagicMock(spec=httpx.Response)
+        response.history = [MagicMock()]
+        response.url = MagicMock()
+        response.url.host = "data.crz.gov.sk"
+        CRZDownloader._validate_redirect(response)
+
+    def test_no_redirect_passes(self):
+        response = MagicMock(spec=httpx.Response)
+        response.history = []
+        CRZDownloader._validate_redirect(response)
+
+    def test_rate_limit_delay_daytime(self):
+        dl = CRZDownloader()
+        with patch("app.ingestion.crz.download.datetime") as mock_dt:
+            mock_dt.now.return_value.hour = 12
+            assert dl._rate_limit_delay() == 2.0
+
+    def test_rate_limit_delay_nighttime(self):
+        dl = CRZDownloader()
+        with patch("app.ingestion.crz.download.datetime") as mock_dt:
+            mock_dt.now.return_value.hour = 22
+            assert dl._rate_limit_delay() == 0.4
+
+    def test_download_retries_on_5xx(self, tmp_path):
+        dl = CRZDownloader()
+        dl._wait_for_rate_limit = MagicMock()
+
+        response_500 = MagicMock()
+        response_500.status_code = 500
+        response_500.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Server Error", request=MagicMock(), response=response_500
+        )
+
+        response_200 = MagicMock()
+        response_200.status_code = 200
+        response_200.content = b"fake zip"
+        response_200.raise_for_status.return_value = None
+
+        dl.client.get = MagicMock(side_effect=[response_500, response_200])
+
+        with (
+            patch("app.ingestion.crz.download.time.sleep"),
+            patch("app.ingestion.crz.download.settings") as mock_settings,
+        ):
+            mock_settings.raw_data_dir = tmp_path
+            result = dl.download_export("2026-05-14", max_retries=3)
+
+        assert dl.client.get.call_count == 2
+        assert result.read_bytes() == b"fake zip"
+
+    def test_download_no_retry_on_4xx(self):
+        dl = CRZDownloader()
+        dl._wait_for_rate_limit = MagicMock()
+
+        response_404 = MagicMock()
+        response_404.status_code = 404
+        response_404.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Not Found", request=MagicMock(), response=response_404
+        )
+
+        dl.client.get = MagicMock(return_value=response_404)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            dl.download_export("2026-01-01", max_retries=3)
+
+        assert dl.client.get.call_count == 1

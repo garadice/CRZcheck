@@ -43,3 +43,17 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "app/dashboard/pages/*",
+    "app/dashboard/Home.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+skip_empty = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+]

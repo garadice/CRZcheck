@@ -23,6 +23,8 @@ in production.
 | `app/flags/evaluate.py` | Risk flag evaluation engine |
 | `app/db/repository.py` | Ingestion lock & stale-run cleanup |
 | `alembic/versions/` | Database migration history |
+| `scripts/backup.sh` | Database backup script (pg_dump, validate, rotate) |
+| `scripts/restore.sh` | Database restore script (--test and --apply modes) |
 
 ### Database Tables (key ones)
 
@@ -148,10 +150,33 @@ latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
 pg_restore --list "$latest" | head -20
 ```
 
+**Automated backup** (recommended):
+```bash
+# Run backup via script
+make backup
+
+# List available backups
+make backup-list
+
+# Test-restore latest backup to verify integrity
+LATEST=$(ls -t backups/crz_monitor_*.dump | head -1)
+make restore-test DUMP="$LATEST"
+```
+
+**Manual verification** (legacy):
+```bash
+# Check backup files exist and are recent
+ls -lh /backups/crz_monitor_*.dump | tail -7
+
+# Verify latest backup is valid
+latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
+pg_restore --list "$latest" | head -20
+```
+
 **If backups are missing or corrupt**:
 1. Check pg_dump cron: `crontab -l`
 2. Check disk space: `df -h /backups`
-3. Run manual backup immediately
+3. Run manual backup immediately: `make backup`
 4. Fix cron and verify next day
 
 ### 3. Ingestion Run History Review (5 min)

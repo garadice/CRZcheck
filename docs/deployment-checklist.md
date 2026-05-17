@@ -257,6 +257,22 @@ load, ~30 min for daily incremental.
 - [ ] Daily `pg_dump -Fc` (custom format, compressible) scheduled
 - [ ] Backups stored on separate disk/volume from database
 - [ ] 30-day retention policy defined
+- [ ] **Backup script** -- `scripts/backup.sh` automates pg_dump, validation, and cleanup:
+  ```bash
+  # Run backup manually
+  make backup
+
+  # Or schedule via cron:
+  0 3 * * * cd /opt/crz-monitor && ./scripts/backup.sh
+  ```
+- [ ] **Restore script** -- `scripts/restore.sh` provides test and apply modes:
+  ```bash
+  # Test restore (non-destructive, validates row counts)
+  make restore-test DUMP=backups/crz_monitor_20260517.dump
+
+  # Production restore (destructive, requires confirmation)
+  make restore DUMP=backups/crz_monitor_20260517.dump
+  ```
 - [ ] Backup script tested:
 
 ```bash

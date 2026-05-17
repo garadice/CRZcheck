@@ -40,3 +40,7 @@ Thumbs.db
 # Playwright artifacts
 .playwright-mcp/
 *.png
+
+# Database backups
+backups/
+*.dump
