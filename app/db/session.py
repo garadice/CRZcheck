@@ -22,7 +22,8 @@ def get_engine() -> Engine:
             max_overflow=10,
             pool_pre_ping=True,
             pool_recycle=300,
-            echo=(settings.app_env == "development"),
+            connect_args={"connect_timeout": 10},
+            echo=settings.sql_echo,
         )
     return _engine
 

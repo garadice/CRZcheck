@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     log_level: str = "INFO"
+    sql_echo: bool = False
 
     @property
     def base_dir(self) -> Path:

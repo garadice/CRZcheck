@@ -7,6 +7,7 @@ from app.dashboard.components.connection import (
     show_disclaimer,
     show_freshness_banner,
 )
+from app.dashboard.components.export import contracts_to_dataframe, export_dataframe
 from app.dashboard.components.queries import (
     get_contract_attachments,
     get_contract_detail,
@@ -27,9 +28,9 @@ contract_id = st.text_input(
     key="detail_contract_id",
 )
 
-session = get_session()
-try:
-    if contract_id:
+if contract_id:
+    session = get_session()
+    try:
         contract = get_contract_detail(session, contract_id)
 
         if contract is None:
@@ -103,7 +104,23 @@ try:
                     with col_b:
                         if att.scan_source_url:
                             st.link_button("📎 Príloha", att.scan_source_url)
-    else:
-        st.info("Zadajte ID zmluvy pre zobrazenie detailu.")
-finally:
-    session.close()
+
+            # CSV Export
+            if flags:
+                st.divider()
+                compound_sev = flags[0].get("severity", "low") if flags else "none"
+                export_df = contracts_to_dataframe(
+                    [
+                        {
+                            "contract": contract,
+                            "flags": flags,
+                            "flag_count": len(flags),
+                            "compound_severity": compound_sev,
+                        }
+                    ]
+                )
+                export_dataframe(export_df, f"detail_{contract.crz_contract_id}")
+    finally:
+        session.close()
+else:
+    st.info("Zadajte ID zmluvy pre zobrazenie detailu.")

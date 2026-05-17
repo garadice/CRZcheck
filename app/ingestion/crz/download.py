@@ -15,8 +15,20 @@ logger = logging.getLogger(__name__)
 
 class CRZDownloader:
     def __init__(self) -> None:
-        self.client = httpx.Client(timeout=30.0, follow_redirects=True)
+        self.client = httpx.Client(
+            timeout=30.0,
+            follow_redirects=True,
+            event_hooks={"response": [self._validate_redirect]},
+        )
         self._last_request_time: float = 0.0
+
+    @staticmethod
+    def _validate_redirect(response: httpx.Response) -> None:
+        """Validate that redirects stay within crz.gov.sk domain."""
+        if response.history:
+            final_host = response.url.host
+            if not final_host.endswith(".crz.gov.sk") and final_host != "crz.gov.sk":
+                raise httpx.HTTPError(f"Redirect outside CRZ domain blocked: {response.url}")
 
     def _rate_limit_delay(self) -> float:
         hour = datetime.now().hour

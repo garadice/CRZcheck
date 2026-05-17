@@ -60,6 +60,8 @@ ATTACHMENT_FIELD_MAP: dict[str, str] = {
     "velkost1": "text_size_bytes",
 }
 
+MAX_XML_SIZE = 100 * 1024 * 1024  # 100 MB — guard against ZIP bombs / malformed data
+
 
 def compute_schema_fingerprint(element_names: list[str]) -> str:
     canonical = ",".join(sorted(element_names))
@@ -100,6 +102,12 @@ def parse_xml(source: Path | str | bytes) -> ParseResult:
 
     if raw.startswith(b"\xef\xbb\xbf"):
         raw = raw[3:]
+
+    if len(raw) > MAX_XML_SIZE:
+        raise ValueError(
+            f"XML payload too large ({len(raw):,} bytes > {MAX_XML_SIZE:,} bytes). "
+            "Possible ZIP bomb or corrupted file."
+        )
 
     contracts: list[ParsedContract] = []
     export_date = ""

@@ -243,11 +243,14 @@ def upsert_supplier(
 
 
 def acquire_ingestion_lock(session: Session, run_type: str = "daily") -> int:
-    """Acquire ingestion lock. Raises RuntimeError if another run is in progress.
+    """Acquire ingestion lock using PostgreSQL advisory lock for atomicity.
 
-    Uses application-level check with stale-run cleanup. For true atomicity
-    with multiple processes, use pg_advisory_lock.
+    Uses pg_try_advisory_xact_lock on PostgreSQL for true atomicity.
+    Falls back to application-level check on SQLite (tests).
+    Stale runs (>6h) are cleaned up before the lock check.
     """
+    from sqlalchemy import text as sa_text
+
     stale_threshold = datetime.now(UTC) - timedelta(hours=6)
     stmt = select(IngestionRun).where(
         IngestionRun.status == "running",
@@ -261,6 +264,18 @@ def acquire_ingestion_lock(session: Session, run_type: str = "daily") -> int:
     if session.execute(stmt).scalars():
         session.flush()
 
+    # Use PostgreSQL advisory lock for true atomicity (not available in SQLite)
+    is_postgres = session.bind.dialect.name == "postgresql" if session.bind else False
+    if is_postgres:
+        lock_id = hash(f"crz_ingestion_{run_type}") & 0x7FFFFFFF
+        lock_result = session.execute(
+            sa_text("SELECT pg_try_advisory_xact_lock(:lock_id)").bindparams(lock_id=lock_id)
+        ).scalar()
+        if not lock_result:
+            raise RuntimeError(
+                f"Cannot acquire ingestion lock — another {run_type} run is in progress"
+            )
+
     stmt = select(IngestionRun).where(
         IngestionRun.status == "running",
         IngestionRun.run_type == run_type,
@@ -271,6 +286,7 @@ def acquire_ingestion_lock(session: Session, run_type: str = "daily") -> int:
             f"Ingestion already in progress (run_id={in_progress.id}, "
             f"started_at={in_progress.started_at})"
         )
+
     run = IngestionRun(run_type=run_type, status="running")
     session.add(run)
     session.flush()

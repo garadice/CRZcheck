@@ -199,15 +199,15 @@ def run_flag_evaluation(
 ) -> tuple[int, int]:
     """Evaluate flags for all contracts and persist results.
 
-    Implements the re-flagging lifecycle:
-    1. For each contract, delete old flags (source_run_id != run_id)
-    2. Evaluate all flags against current contract data
-    3. Insert new ContractRiskFlag rows with current run_id
+    Implements the re-flagging lifecycle with batched commits:
+    1. Delete all old flags from previous runs (one-time bulk delete)
+    2. Process contracts in batches with periodic commits
+    3. Each batch: evaluate flags → flush → commit
 
     Args:
         session: SQLAlchemy session
         run_id: Current ingestion run ID
-        batch_size: How often to flush (controls memory usage)
+        batch_size: How many contracts to process before committing
 
     Returns:
         Tuple of (contracts_checked, flags_created)
@@ -218,50 +218,53 @@ def run_flag_evaluation(
     # Ensure flag definitions exist in DB
     for code in FLAG_CATALOG:
         _get_or_create_flag_def(session, code)
+    session.flush()
 
-    stmt = select(Contract).execution_options(yield_per=batch_size)
-    contracts = session.execute(stmt).scalars()
-
-    for contract in contracts:
-        # Delete old flags for this contract from other runs
-        session.execute(
-            delete(ContractRiskFlag).where(
-                ContractRiskFlag.crz_contract_id == contract.crz_contract_id,
-                ContractRiskFlag.source_run_id != run_id,
-            )
-        )
-
-        # Evaluate flags
-        matches = evaluate_contract(contract)
-        for match in matches:
-            flag_def = _get_or_create_flag_def(session, match.flag_code)
-            crf = ContractRiskFlag(
-                crz_contract_id=contract.crz_contract_id,
-                flag_id=flag_def.id,
-                source_run_id=run_id,
-                severity=match.severity,
-                reason=match.reason,
-                evidence_json=match.evidence,
-            )
-            session.add(crf)
-            flags_created += 1
-
-        contracts_checked += 1
-
-        # Periodic flush to control memory
-        if contracts_checked % batch_size == 0:
-            session.flush()
-            logger.info(
-                f"Flag evaluation progress: {contracts_checked} contracts, {flags_created} flags"
-            )
-
+    # Bulk delete all old flags from previous runs upfront
     session.execute(
         delete(ContractRiskFlag).where(
             ContractRiskFlag.source_run_id != run_id,
         )
     )
-
     session.flush()
+    session.commit()
+
+    # Process contracts in batches with periodic commits
+    offset = 0
+    while True:
+        batch = list(
+            session.execute(
+                select(Contract).order_by(Contract.crz_contract_id).offset(offset).limit(batch_size)
+            ).scalars()
+        )
+        if not batch:
+            break
+
+        for contract in batch:
+            matches = evaluate_contract(contract)
+            for match in matches:
+                flag_def = _get_or_create_flag_def(session, match.flag_code)
+                crf = ContractRiskFlag(
+                    crz_contract_id=contract.crz_contract_id,
+                    flag_id=flag_def.id,
+                    source_run_id=run_id,
+                    severity=match.severity,
+                    reason=match.reason,
+                    evidence_json=match.evidence,
+                )
+                session.add(crf)
+                flags_created += 1
+
+            contracts_checked += 1
+
+        session.flush()
+        session.commit()
+
+        logger.info(
+            f"Flag evaluation progress: {contracts_checked} contracts, {flags_created} flags"
+        )
+        offset += batch_size
+
     logger.info(
         f"Flag evaluation complete: {contracts_checked} contracts checked, "
         f"{flags_created} flags created"
