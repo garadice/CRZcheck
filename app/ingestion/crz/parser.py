@@ -106,12 +106,22 @@ def parse_xml(source: Path | str | bytes) -> ParseResult:
     all_element_names: set[str] = set()
     root_date: str | None = None
 
-    context = etree.iterparse(io.BytesIO(raw), events=("start",), tag="zmluvy", recover=True)
+    _safe = dict(
+        resolve_entities=False,
+        no_network=True,
+        dtd_validation=False,
+        load_dtd=False,
+        huge_tree=False,
+    )
+
+    context = etree.iterparse(
+        io.BytesIO(raw), events=("start",), tag="zmluvy", recover=True, **_safe
+    )
     for _event, elem in context:
         root_date = elem.get("datum")
         break
 
-    context = etree.iterparse(io.BytesIO(raw), events=("end",), tag="zmluva", recover=True)
+    context = etree.iterparse(io.BytesIO(raw), events=("end",), tag="zmluva", recover=True, **_safe)
     for _event, elem in context:
         contract_data: dict[str, str | None] = {}
         unmapped: dict[str, str] = {}

@@ -8,6 +8,8 @@ from io import StringIO
 import pandas as pd
 import streamlit as st
 
+from app.transforms.entities import is_probable_natural_person
+
 
 def export_dataframe(df: pd.DataFrame, filename: str) -> None:
     """Export a DataFrame as CSV download with disclaimer header."""
@@ -48,14 +50,22 @@ def contracts_to_dataframe(contracts_data: list[dict]) -> pd.DataFrame:
     for item in contracts_data:
         c = item["contract"]
         flag_names = ", ".join(f["name"] for f in item["flags"])
+
+        supplier_name = c.supplier_name or ""
+        supplier_ico = c.supplier_ico or ""
+
+        if is_probable_natural_person(supplier_name, supplier_ico):
+            supplier_name = "[fyzická osoba]"
+            supplier_ico = ""
+
         rows.append(
             {
                 "ID zmluvy": c.crz_contract_id,
                 "Názov": c.title or "",
                 "Obstarávateľ": c.buyer_name or "",
                 "IČO obstarávateľa": c.buyer_ico or "",
-                "Dodávateľ": c.supplier_name or "",
-                "IČO dodávateľa": c.supplier_ico or "",
+                "Dodávateľ": supplier_name,
+                "IČO dodávateľa": supplier_ico,
                 "Cena celková": str(c.price_total) if c.price_total is not None else "",
                 "Dátum zmluvy": str(c.contract_date) if c.contract_date else "",
                 "Zverejnené": str(c.publication_date) if c.publication_date else "",

@@ -41,7 +41,10 @@ def check_data_freshness(session: Session) -> dict:
         }
 
     now = datetime.now(UTC)
-    hours_since = (now - last_success.finished_at).total_seconds() / 3600
+    finished = last_success.finished_at
+    if finished and finished.tzinfo is None:
+        finished = finished.replace(tzinfo=UTC)
+    hours_since = (now - finished).total_seconds() / 3600
 
     result: dict = {
         "status": "fresh",

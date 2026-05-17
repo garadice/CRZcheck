@@ -145,10 +145,10 @@ def get_flagged_contracts(
 
         if severity_filter and sev != "none":
             severity_order = {"low": 1, "medium": 2, "high": 3}
-            if (
-                severity_order.get(sev, 0) < severity_order.get(severity_filter, 0)
-                and flag_count < 2
-            ):
+            filter_level = severity_order.get(severity_filter, 0)
+            contract_level = severity_order.get(sev, 0)
+            override_threshold = 3 if severity_filter == "high" else 2
+            if contract_level < filter_level and flag_count < override_threshold:
                 continue
 
         results.append(

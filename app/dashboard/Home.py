@@ -41,6 +41,7 @@ try:
 
     # --- Search ---
     st.subheader("🔎 Vyhľadávanie zmlúv")
+    st.caption("⚠️ Výsledky môžu obsahovať údaje fyzických osôb.")
     date_from, date_to = date_range_filter(key_prefix="home")
     search_query = text_search_filter(key_prefix="home")
 
@@ -53,7 +54,11 @@ try:
             limit=50,
         )
         if results:
-            st.success(f"Nájdených **{len(results)}** zmlúv")
+            shown = min(len(results), 20)
+            if len(results) > 20:
+                st.success(f"Nájdených **{len(results)}** zmlúv (zobrazujem prvých 20)")
+            else:
+                st.success(f"Nájdených **{len(results)}** zmlúv")
             for c in results[:20]:
                 with st.container():
                     col_a, col_b = st.columns([3, 1])

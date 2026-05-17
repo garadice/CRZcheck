@@ -61,8 +61,9 @@ def flag_type_filter(key_prefix: str = "") -> str | None:
 def text_search_filter(key_prefix: str = "") -> str | None:
     """Text search input in sidebar."""
     key = f"{key_prefix}_search" if key_prefix else "search"
-    return st.sidebar.text_input(
+    value = st.sidebar.text_input(
         "Hľadať",
         placeholder="Názov, dodávateľ, IČO...",
         key=key,
     )
+    return value.strip() or None

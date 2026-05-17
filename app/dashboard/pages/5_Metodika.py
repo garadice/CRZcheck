@@ -2,13 +2,14 @@
 
 import streamlit as st
 
-from app.dashboard.components.connection import show_disclaimer
+from app.dashboard.components.connection import show_disclaimer, show_freshness_banner
 from app.flags.definitions import FLAG_CATALOG
 
 st.set_page_config(page_title="Metodika", page_icon="📖", layout="wide")
 
 st.title("📖 Metodika")
 
+show_freshness_banner()
 show_disclaimer()
 
 st.markdown("""
