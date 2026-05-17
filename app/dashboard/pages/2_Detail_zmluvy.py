@@ -13,6 +13,7 @@ from app.dashboard.components.queries import (
     get_contract_detail,
     get_contract_flags,
 )
+from app.flags.evaluate import compound_severity
 
 st.set_page_config(page_title="Detail zmluvy", page_icon="📄", layout="wide")
 
@@ -108,7 +109,7 @@ if contract_id:
             # CSV Export
             if flags:
                 st.divider()
-                compound_sev = flags[0].get("severity", "low") if flags else "none"
+                compound_sev = compound_severity(flags)
                 export_df = contracts_to_dataframe(
                     [
                         {

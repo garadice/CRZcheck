@@ -28,7 +28,7 @@ class CRZDownloader:
         if response.history:
             final_host = response.url.host
             if not final_host.endswith(".crz.gov.sk") and final_host != "crz.gov.sk":
-                raise httpx.HTTPError(f"Redirect outside CRZ domain blocked: {response.url}")
+                raise httpx.TransportError(f"Redirect outside CRZ domain blocked: {response.url}")
 
     def _rate_limit_delay(self) -> float:
         hour = datetime.now().hour

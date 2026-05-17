@@ -267,7 +267,10 @@ def acquire_ingestion_lock(session: Session, run_type: str = "daily") -> int:
     # Use PostgreSQL advisory lock for true atomicity (not available in SQLite)
     is_postgres = session.bind.dialect.name == "postgresql" if session.bind else False
     if is_postgres:
-        lock_id = hash(f"crz_ingestion_{run_type}") & 0x7FFFFFFF
+        lock_id = (
+            int(hashlib.sha256(f"crz_ingestion_{run_type}".encode()).hexdigest()[:8], 16)
+            & 0x7FFFFFFF
+        )
         lock_result = session.execute(
             sa_text("SELECT pg_try_advisory_xact_lock(:lock_id)").bindparams(lock_id=lock_id)
         ).scalar()
