@@ -105,26 +105,7 @@ s.close()
     esac
 }
 
-# ── 5. Backup ─────────────────────────────────────────────────────────────────
-
-check_backup() {
-    if bash "${INSTALL_DIR}/scripts/backup.sh" &>/dev/null; then
-        pass "Backup created successfully"
-    else
-        fail "Backup script failed"
-        return
-    fi
-
-    local dump_count
-    dump_count=$(find "${INSTALL_DIR}/backups" -name '*.dump' -type f 2>/dev/null | wc -l)
-    if [[ "${dump_count}" -gt 0 ]]; then
-        pass "At least one .dump file exists in backups/"
-    else
-        fail "No .dump files found in backups/"
-    fi
-}
-
-# ── 6. Systemd Services ──────────────────────────────────────────────────────
+# ── 5. Systemd Services ──────────────────────────────────────────────────────
 
 check_systemd_services() {
     local dashboard_active
@@ -155,7 +136,6 @@ main() {
     check_migrations
     check_dashboard
     check_data_freshness
-    check_backup
     check_systemd_services
 
     echo ""

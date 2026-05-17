@@ -34,7 +34,7 @@ ingest: ## Run CRZ data ingestion
 dashboard: ## Start Streamlit dashboard
 	.venv/bin/streamlit run app/dashboard/Home.py --server.port 8501
 
-backup: ## Run database backup
+backup: ## Run database backup (optional — all data re-downloadable from CRZ API)
 	@bash scripts/backup.sh
 
 backup-list: ## List available backups

@@ -1,6 +1,6 @@
 # CRZ Risk & Quality Monitor — Operational Runbook
 
-Daily, weekly, and monthly operational procedures for maintaining the CRZ Monitor
+Daily and weekly operational procedures for maintaining the CRZ Monitor
 in production.
 
 ---
@@ -23,8 +23,6 @@ in production.
 | `app/flags/evaluate.py` | Risk flag evaluation engine |
 | `app/db/repository.py` | Ingestion lock & stale-run cleanup |
 | `alembic/versions/` | Database migration history |
-| `scripts/backup.sh` | Database backup script (pg_dump, validate, rotate) |
-| `scripts/restore.sh` | Database restore script (--test and --apply modes) |
 
 ### Database Tables (key ones)
 
@@ -38,6 +36,34 @@ in production.
 | `organizations` | Deduplicated buyer entities |
 | `suppliers` | Deduplicated supplier entities |
 | `raw_crz_exports` | Download tracking per date |
+
+---
+
+## Data Recovery
+
+All data in this project comes from the public CRZ API. There are no user
+accounts, no user-generated content, and no irreplaceable data. If the database
+is corrupted or lost, it can be rebuilt from scratch:
+
+```bash
+# Full rebuild — re-ingest 90 days from CRZ API (~4–8 hours)
+docker compose down -v          # remove old data
+docker compose up -d db         # start fresh PostgreSQL
+alembic upgrade head            # create schema
+python -m app.ingestion.jobs    # re-ingest everything
+```
+
+Manual backups are available if you want a faster recovery (saves the re-ingestion time):
+
+```bash
+# Create a backup manually
+make backup
+
+# Restore from backup
+make restore DUMP=backups/crz_monitor_20260517.dump
+```
+
+But automated daily backups are not configured — the CRZ API is the backup.
 
 ---
 
@@ -137,49 +163,7 @@ LIMIT 10;
 **Expected**: 3–7 GB at steady state. If growing rapidly (>1 GB/week after initial load),
 investigate whether `contract_versions` or `raw_crz_exports` are accumulating excessively.
 
-### 2. Backup Verification (10 min)
-
-**When**: Monday
-
-```bash
-# Check backup files exist and are recent
-ls -lh /backups/crz_monitor_*.dump | tail -7
-
-# Verify latest backup is valid
-latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
-pg_restore --list "$latest" | head -20
-```
-
-**Automated backup** (recommended):
-```bash
-# Run backup via script
-make backup
-
-# List available backups
-make backup-list
-
-# Test-restore latest backup to verify integrity
-LATEST=$(ls -t backups/crz_monitor_*.dump | head -1)
-make restore-test DUMP="$LATEST"
-```
-
-**Manual verification** (legacy):
-```bash
-# Check backup files exist and are recent
-ls -lh /backups/crz_monitor_*.dump | tail -7
-
-# Verify latest backup is valid
-latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
-pg_restore --list "$latest" | head -20
-```
-
-**If backups are missing or corrupt**:
-1. Check pg_dump cron: `crontab -l`
-2. Check disk space: `df -h /backups`
-3. Run manual backup immediately: `make backup`
-4. Fix cron and verify next day
-
-### 3. Ingestion Run History Review (5 min)
+### 2. Ingestion Run History Review (5 min)
 
 **When**: Monday
 
@@ -202,7 +186,7 @@ ORDER BY started_at;
 - Non-zero `records_seen` (CRZ adds new contracts daily)
 - Consistent `records_inserted` (spikes may indicate re-processing)
 
-### 4. Log Review (10 min)
+### 3. Log Review (10 min)
 
 **When**: Monday
 
@@ -217,7 +201,7 @@ sudo journalctl -u crz-dashboard --since "7 days ago" | grep -i "error\|tracebac
 docker logs crz_db --since "168h" 2>&1 | grep -i "error\|fatal\|panic" | tail -20
 ```
 
-### 5. Stale Data Cleanup Check (5 min)
+### 4. Stale Data Cleanup Check (5 min)
 
 **When**: Monday
 
@@ -269,35 +253,7 @@ LIMIT 10;
 If `n_dead_tup` is high (>100K) on any table, run `VACUUM FULL <table>` during
 a maintenance window (requires exclusive lock, table is unavailable during operation).
 
-### 2. Backup Restore Test (30 min)
-
-**When**: Monthly
-
-1. Restore latest backup to a test database:
-
-```bash
-# Create test database
-docker exec crz_db createdb -U crz crz_monitor_test
-
-# Restore
-latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
-cat "$latest" | docker exec -i crz_db pg_restore -U crz -d crz_monitor_test -c
-
-# Verify row counts
-docker exec crz_db psql -U crz -d crz_monitor_test -c "
-SELECT 'contracts' AS t, count(*) FROM contracts
-UNION ALL SELECT 'organizations', count(*) FROM organizations
-UNION ALL SELECT 'suppliers', count(*) FROM suppliers
-UNION ALL SELECT 'ingestion_runs', count(*) FROM ingestion_runs;
-"
-
-# Cleanup
-docker exec crz_db dropdb -U crz crz_monitor_test
-```
-
-2. Compare counts with production to verify backup integrity.
-
-### 3. Security Review (15 min)
+### 2. Security Review (15 min)
 
 **When**: Monthly
 
@@ -308,26 +264,24 @@ docker exec crz_db dropdb -U crz crz_monitor_test
 - [ ] Review docker image updates: `docker compose pull`
 - [ ] Verify firewall rules unchanged
 
-### 4. Disk Space Check (5 min)
+### 3. Disk Space Check (5 min)
 
 **When**: Monthly
 
 ```bash
 # Overall disk usage
 df -h /var/lib/docker/volumes/  # Docker volumes
-df -h /backups                   # Backup location
 
 # Docker volume sizes
 docker system df -v
 ```
 
 **If disk usage > 80%**:
-1. Clean old backup files beyond retention period
-2. Clean old raw data files in `data/raw/`
-3. Consider `VACUUM FULL` on bloated tables
-4. Provision additional storage
+1. Clean old raw data files in `data/raw/`
+2. Consider `VACUUM FULL` on bloated tables
+3. Provision additional storage
 
-### 5. Raw Data Cleanup (5 min)
+### 4. Raw Data Cleanup (5 min)
 
 **When**: Monthly
 
@@ -335,7 +289,7 @@ Downloaded ZIP files accumulate in `data/raw/`. These are re-downloaded on each
 ingestion run, so old files can be safely deleted:
 
 ```bash
-# List raw data files and their sizes
+# Show size of raw data
 du -sh data/raw/
 ls -lh data/raw/*.zip | wc -l
 
@@ -364,7 +318,7 @@ on dashboard.
    `DATABASE_URL` in `.env`, check connection: `psql $DATABASE_URL -c "SELECT 1"`.
 4. **Schema change in CRZ export**: If XML parsing fails, check `app/ingestion/crz/parser.py`
    against a sample download. May need code update.
-5. **Disk full**: Check `df -h`. Free space by cleaning raw data or old backups.
+5. **Disk full**: Check `df -h`. Free space by cleaning raw data.
 6. After fixing, run manual ingestion: `make ingest`
 7. Verify dashboard shows fresh data.
 
@@ -376,8 +330,6 @@ on dashboard.
 1. Check Streamlit process:
    ```bash
    sudo systemctl status crz-dashboard
-   # or
-   docker ps | grep streamlit
    ```
 2. If process is dead, restart:
    ```bash
@@ -391,10 +343,9 @@ on dashboard.
    ```bash
    psql $DATABASE_URL -c "SELECT 1"
    ```
-5. Check reverse proxy (nginx/Caddy) is running:
+5. Check reverse proxy (Caddy) is running:
    ```bash
-   sudo systemctl status nginx
-   sudo nginx -t
+   sudo systemctl status caddy
    ```
 
 ### Incident: Database Corruption / Data Loss
@@ -409,33 +360,25 @@ on dashboard.
    ```
 2. Assess extent of damage:
    ```sql
-   -- Check table integrity
    SELECT relname, n_live_tup FROM pg_stat_user_tables ORDER BY relname;
    ```
-3. **Restore from backup** (if data loss confirmed):
+3. **If you have a manual backup**, restore it:
    ```bash
-   # Stop PostgreSQL client connections
-   docker compose stop db
-
-   # Start PostgreSQL alone
-   docker compose up -d db
-
-   # Drop and recreate database
-   docker exec crz_db dropdb -U crz crz_monitor
-   docker exec crz_db createdb -U crz crz_monitor
-
-   # Restore
-   latest=$(ls -t /backups/crz_monitor_*.dump | head -1)
-   cat "$latest" | docker exec -i crz_db pg_restore -U crz -d crz_monitor
+   make restore DUMP=backups/crz_monitor_YYYYMMDD.dump
    ```
-4. Run migrations to ensure schema is current: `alembic upgrade head`
-5. Run full ingestion to bring data up to date: `make ingest`
-6. Start services:
+4. **If no backup** (or backup is also corrupt), rebuild from scratch:
+   ```bash
+   docker compose down -v
+   docker compose up -d db
+   alembic upgrade head
+   python -m app.ingestion.jobs    # re-ingest from CRZ (~4-8 hours)
+   ```
+5. Start services:
    ```bash
    sudo systemctl start crz-dashboard
    sudo systemctl start crz-ingestion  # or wait for timer
    ```
-7. Verify dashboard shows expected data.
+6. Verify dashboard shows expected data.
 
 ### Incident: Disk Space Exhaustion
 
@@ -446,20 +389,16 @@ on dashboard.
    ```bash
    du -sh /var/lib/docker/volumes/*
    du -sh data/raw/
-   du -sh /backups/
    ```
 2. **Immediate relief**:
    ```bash
    # Clean old raw ZIP files
    find data/raw/ -name "*.zip" -mtime +7 -delete
 
-   # Clean old backups beyond retention
-   find /backups/ -name "crz_monitor_*.dump" -mtime +30 -delete
-
    # Docker cleanup
    docker system prune -f
    ```
-3. **Long-term**: Increase disk size or move backups to remote storage.
+3. **Long-term**: Increase disk size or set up raw data cleanup cron.
 
 ### Incident: Stale Ingestion Run (Running > 6h)
 
@@ -591,8 +530,6 @@ ExecStart=/opt/crz-monitor/.venv/bin/python -m app.ingestion.jobs
 TimeoutStartSec=4h
 Environment=APP_ENV=production
 Environment=LOG_LEVEL=INFO
-
-# Read .env file
 EnvironmentFile=/opt/crz-monitor/.env
 ```
 

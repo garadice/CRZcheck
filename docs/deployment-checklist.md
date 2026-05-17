@@ -135,11 +135,8 @@ load, ~30 min for daily incremental.
 
 ### 3.3 Backups
 
-- [ ] **pg_dump cron** configured:
+- [ ] **Backup strategy** — no automated backups configured. All data is from the public CRZ API and can be re-ingested (~4-8 hours). Manual backup available via `make backup`.
   ```bash
-  # Daily full backup, keep 30 days
-  0 3 * * * pg_dump -Fc crz_monitor > /backups/crz_monitor_$(date +\%Y\%m\%d).dump
-  0 4 * * * find /backups -name "crz_monitor_*.dump" -mtime +30 -delete
   ```
 - [ ] **Backup location** — separate volume or remote storage (S3, rsync to another host)
 - [ ] **Restore test** — perform at least one test restore before going live
@@ -254,9 +251,9 @@ load, ~30 min for daily incremental.
 
 ### 6.1 Database Backup
 
-- [ ] Daily `pg_dump -Fc` (custom format, compressible) scheduled
+- [ ] **Manual backups** — `make backup` available if faster recovery is needed
 - [ ] Backups stored on separate disk/volume from database
-- [ ] 30-day retention policy defined
+- [ ] No automated retention needed — re-ingest from CRZ API is the fallback
 - [ ] **Backup script** -- `scripts/backup.sh` automates pg_dump, validation, and cleanup:
   ```bash
   # Run backup manually
@@ -305,8 +302,8 @@ docker exec -i crz_db pg_restore -U crz -d crz_monitor -c < /backups/crz_monitor
 
 ### 6.4 Disaster Recovery
 
-- [ ] RPO (Recovery Point Objective): 24 hours (daily backups)
-- [ ] RTO (Recovery Time Objective): 2 hours (documented procedure)
+- [ ] **RPO**: No formal RPO — all data re-downloadable from CRZ API (~4-8 hours)
+- [ ] **RTO**: ~4-8 hours (re-ingest from scratch) or ~30 min (if manual backup exists)
 - [ ] Recovery procedure tested end-to-end before production launch
 
 ---

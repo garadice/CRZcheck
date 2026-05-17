@@ -192,7 +192,7 @@ run_migrations() {
     log_info "Migrations complete."
 }
 
-# ── Step 8: Install Systemd Units ────────────────────────────────────────────
+# ── Step 8: Install Systemd Units ─────────────────────────────────────────────
 
 install_systemd_units() {
     log_info "Installing systemd unit files..."
@@ -261,25 +261,7 @@ UNIT
     log_info "Enabled crz-dashboard and crz-ingestion.timer."
 }
 
-# ── Step 9: Set Up Backup Cron ────────────────────────────────────────────────
-
-setup_backup_cron() {
-    mkdir -p "${INSTALL_DIR}/backups"
-    chown "${SERVICE_USER}:${SERVICE_USER}" "${INSTALL_DIR}/backups"
-
-    local cron_entry="0 3 * * * ${INSTALL_DIR}/scripts/backup.sh"
-    local current_cron
-    current_cron=$(sudo -u "${SERVICE_USER}" crontab -l 2>/dev/null || true)
-
-    if echo "${current_cron}" | grep -qF "scripts/backup.sh"; then
-        log_info "Backup cron already configured."
-    else
-        echo "${current_cron}"$'\n'"${cron_entry}" | sudo -u "${SERVICE_USER}" crontab -
-        log_info "Backup cron installed (daily at 03:00)."
-    fi
-}
-
-# ── Step 10: Print Next Steps ─────────────────────────────────────────────────
+# ── Step 9: Print Next Steps ──────────────────────────────────────────────────
 
 print_next_steps() {
     echo ""
@@ -304,6 +286,11 @@ print_next_steps() {
     echo "  5. Run the smoke test:"
     echo "     bash ${INSTALL_DIR}/scripts/smoke-test.sh"
     echo ""
+    echo "  Note: No automated backups are configured."
+    echo "  All data comes from the public CRZ API — if the database dies,"
+    echo "  just re-ingest (takes ~4-8 hours for a full 90-day window)."
+    echo "  You can run a manual backup anytime with: make backup"
+    echo ""
     echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
 }
 
@@ -318,7 +305,6 @@ main() {
     start_postgres
     run_migrations
     install_systemd_units
-    setup_backup_cron
     print_next_steps
 }
 
