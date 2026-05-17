@@ -44,3 +44,8 @@ Thumbs.db
 # Database backups
 backups/
 *.dump
+
+# AI session artifacts (kept locally, not for public)
+docs/session-context.md
+docs/master-plan.md
+docs/crz-risk-quality-monitor-implementation-plan.md

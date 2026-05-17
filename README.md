@@ -4,7 +4,7 @@
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
+[![Tests](https://img.shields.io/badge/tests-302%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
 [![Ruff](https://img.shields.io/badge/lint-ruff%20clean-black?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -24,7 +24,7 @@ Slovakia's Central Register of Contracts ([CRZ](https://www.crz.gov.sk/)) publis
 
 These gaps make it nearly impossible to aggregate spending by supplier, track contract patterns, or answer the basic question: *who got paid how much by whom?*
 
-**CRZcheck** systematically detects and surfaces these metadata quality issues so that analysts, journalists, and civic organizations know which contracts need manual review.
+**CRZcheck** detects and surfaces these metadata quality issues so that analysts, journalists, and civic organizations know which contracts need manual review.
 
 ---
 
@@ -52,15 +52,15 @@ These gaps make it nearly impossible to aggregate spending by supplier, track co
 
 ## Why This Project?
 
-This is a **portfolio project** demonstrating end-to-end data engineering and analysis skills:
+This is a **portfolio project** built to demonstrate end-to-end data engineering and analysis skills:
 
-- **Data engineering** — robust ingestion pipeline with rate limiting, streaming parsing, upsert semantics, and idempotent re-processing
-- **Data quality** — systematic flag system with documented methodology and compound severity logic
-- **Software engineering** — 202 tests, clean lint, type-safe configuration, schema migrations, Docker setup
+- **Data engineering** — ingestion pipeline with rate limiting, streaming XML parsing, upsert semantics, and idempotent re-processing
+- **Data quality** — a systematic flag system with documented methodology and compound severity logic
+- **Software engineering** — 302 tests, clean lint, type-safe configuration, schema migrations, Docker setup
 - **Domain expertise** — handles Slovak-specific data formats (European number formatting, IČO normalization, natural person heuristics)
 - **Communication** — bilingual documentation (Slovak dashboard for users, English docs for technical audience)
 
-The project was built to solve a real problem: making Slovakia's public procurement data actually usable for analysis.
+I built it to solve a real problem: making Slovakia's public procurement data actually usable for analysis.
 
 ---
 
@@ -80,7 +80,7 @@ CRZ API ──► Downloader ──► XML Parser ──► Cleaning ──► P
 | HTTP | httpx (rate-limited) |
 | XML | lxml (streaming iterparse) |
 | Config | Pydantic Settings |
-| Testing | pytest (202 tests) |
+| Testing | pytest (302 tests) |
 | Linting | Ruff |
 
 For the full architecture with diagrams, data flow details, and database schema, see [docs/architecture.md](docs/architecture.md).
@@ -167,14 +167,14 @@ make db-up      # Start PostgreSQL
 make migrate    # Run migrations
 make ingest     # Download + ingest CRZ data
 make dashboard  # Start Streamlit on port 8501
-make test       # Run 202 tests
+make test       # Run tests
 make lint       # Run ruff
 ```
 
 ### Verify
 
 ```bash
-make test   # All 202 tests should pass
+make test   # All 302 tests should pass
 make lint   # Ruff should report no issues
 ```
 

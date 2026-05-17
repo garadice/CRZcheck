@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CRZ Risk & Quality Monitor is a Python-based data pipeline and analytics platform that ingests public procurement contract data from the Slovak CRZ (Central Register of Contracts) government API, cleans and normalizes it, evaluates risk flags, and presents findings through an interactive Streamlit dashboard. The system processes hundreds of thousands of contracts within a configurable 90-day rolling window, applying six metadata quality checks — from missing price to incomplete entity identification — and surfaces the results for investigative review. It is designed for reliability (idempotent ingestion with re-flagging lifecycle), data integrity (SHA-256 verification, upsert semantics), and operational simplicity (single-command Docker setup, deterministic flag evaluation).
+CRZcheck is a Python data pipeline that ingests public contract metadata from the Slovak CRZ government API, checks it for quality issues, and shows the results in a Streamlit dashboard. It processes hundreds of thousands of contracts within a 90-day rolling window using six metadata quality checks. The pipeline is designed to be idempotent (safe to re-run), data-integrity-focused (SHA-256 verification, upsert semantics), and simple to operate (single-command Docker setup).
 
 ---
 
@@ -310,7 +310,7 @@ When users export dashboard data to CSV, the filename and embedded timestamps ar
 | Configuration | Pydantic Settings | Type-safe environment-based configuration |
 | Data Handling | Pandas | Tabular data manipulation in dashboard |
 | Linting | Ruff | Fast Python linting and formatting |
-| Testing | pytest | 202 tests across unit, integration, and functional layers |
+| Testing | pytest | 302 tests (84% coverage) |
 | Containerization | Docker Compose | PostgreSQL service definition |
 
 ---
@@ -347,7 +347,7 @@ CRZcheck/
 ├── alembic/                               # Database migration scripts
 │   ├── versions/                          # Migration files
 │   └── env.py                             # Alembic configuration
-├── tests/                                 # 202 test cases
+├── tests/                                 # 302 test cases (84% coverage)
 ├── docs/                                  # Project documentation
 ├── data/                                  # Raw data storage
 ├── docker-compose.yml                     # PostgreSQL service
