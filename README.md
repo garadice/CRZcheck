@@ -4,7 +4,8 @@
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Tests](https://img.shields.io/badge/tests-302%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
+[![Tests](https://img.shields.io/badge/tests-359%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?logo=pytest&logoColor=white)](./tests)
 [![Ruff](https://img.shields.io/badge/lint-ruff%20clean-black?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -56,7 +57,7 @@ This is a **portfolio project** built to demonstrate end-to-end data engineering
 
 - **Data engineering** — ingestion pipeline with rate limiting, streaming XML parsing, upsert semantics, and idempotent re-processing
 - **Data quality** — a systematic flag system with documented methodology and compound severity logic
-- **Software engineering** — 302 tests, clean lint, type-safe configuration, schema migrations, Docker setup
+- **Software engineering** — 359 tests, clean lint, type-safe configuration, schema migrations, Docker setup
 - **Domain expertise** — handles Slovak-specific data formats (European number formatting, IČO normalization, natural person heuristics)
 - **Communication** — bilingual documentation (Slovak dashboard for users, English docs for technical audience)
 
@@ -80,7 +81,7 @@ CRZ API ──► Downloader ──► XML Parser ──► Cleaning ──► P
 | HTTP | httpx (rate-limited) |
 | XML | lxml (streaming iterparse) |
 | Config | Pydantic Settings |
-| Testing | pytest (302 tests) |
+| Testing | pytest (359 tests, 95% coverage) |
 | Linting | Ruff |
 
 For the full architecture with diagrams, data flow details, and database schema, see [docs/architecture.md](docs/architecture.md).
@@ -174,7 +175,7 @@ make lint       # Run ruff
 ### Verify
 
 ```bash
-make test   # All 302 tests should pass
+make test   # All 359 tests should pass
 make lint   # Ruff should report no issues
 ```
 
@@ -182,7 +183,16 @@ make lint   # Ruff should report no issues
 
 ## Screenshots
 
-*Coming soon — dashboard screenshots will be added once the project is deployed.*
+The dashboard is deployed at [crzcheck.bacimo.net](https://crzcheck.bacimo.net).
+
+| | |
+|---|---|
+| **Home** — Overview with key metrics | **Oznamy** — Flagged contracts list |
+| ![Home](docs/screenshots/home.png) | ![Oznamy](docs/screenshots/oznamy.png) |
+| **Detail zmluvy** — Single contract view | **Organizácie** — Buyer organizations |
+| ![Detail](docs/screenshots/detail.png) | ![Organizácie](docs/screenshots/organizacie.png) |
+| **Stav dát** — Data health overview | |
+| ![Stav dát](docs/screenshots/stav-dat.png) | |
 
 ---
 
@@ -208,7 +218,7 @@ See [docs/limitations.md](docs/limitations.md) for the full analysis.
 - [ ] Cross-referencing with the Slovak Register of Legal Entities (RPO)
 - [ ] Dashboard English localization toggle
 - [ ] Contract change tracking (amendment detection)
-- [ ] Public demo deployment
+- [x] Public demo deployment — [crzcheck.bacimo.net](https://crzcheck.bacimo.net)
 
 ---
 
