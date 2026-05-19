@@ -185,14 +185,18 @@ make lint   # Ruff should report no issues
 
 The dashboard is deployed at [crzcheck.bacimo.net](https://crzcheck.bacimo.net).
 
-| | |
-|---|---|
-| **Home** — Overview with key metrics | **Oznamy** — Flagged contracts list |
-| ![Home](docs/screenshots/home.png) | ![Oznamy](docs/screenshots/oznamy.png) |
-| **Detail zmluvy** — Single contract view | **Organizácie** — Buyer organizations |
-| ![Detail](docs/screenshots/detail.png) | ![Organizácie](docs/screenshots/organizacie.png) |
-| **Stav dát** — Data health overview | |
-| ![Stav dát](docs/screenshots/stav-dat.png) | |
+| |
+|---|
+| **Home** — Overview with key metrics |
+| ![Home](docs/screenshots/home.png) |
+| **Oznamy** — Flagged contracts list |
+| ![Oznamy](docs/screenshots/oznamy.png) |
+| **Detail zmluvy** — Single contract view |
+| ![Detail](docs/screenshots/detail.png) |
+| **Organizácie** — Buyer organizations |
+| ![Organizácie](docs/screenshots/organizacie.png) |
+| **Stav dát** — Data health overview |
+| ![Stav dát](docs/screenshots/stav-dat.png) |
 
 ---
 

@@ -2,21 +2,13 @@
 
 from __future__ import annotations
 
-import sys
 from datetime import date
-from unittest.mock import MagicMock, patch
-
-from app.flags.definitions import FLAG_CATALOG
-
-# ── Streamlit mock ────────────────────────────────────────────────────────────
-
-if "streamlit" not in sys.modules:
-    _st_mock = MagicMock()
-    sys.modules["streamlit"] = _st_mock
+from unittest.mock import patch
 
 import streamlit as st
 
 from app.dashboard.components import filters as filters_module
+from app.flags.definitions import FLAG_CATALOG
 
 # ── TestDateRangeFilter ───────────────────────────────────────────────────────
 

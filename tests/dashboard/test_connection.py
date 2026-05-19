@@ -2,17 +2,7 @@
 
 from __future__ import annotations
 
-import sys
 from unittest.mock import MagicMock, patch
-
-# ── Streamlit mock ────────────────────────────────────────────────────────────
-# streamlit is optional in test environments; provide a stub if missing.
-
-if "streamlit" not in sys.modules:
-    _st_mock = MagicMock()
-    _st_mock.cache_resource = lambda fn: fn  # pass-through decorator
-    sys.modules["streamlit"] = _st_mock
-
 
 from app.dashboard.components import connection as conn_module
 
