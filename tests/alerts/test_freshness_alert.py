@@ -70,3 +70,54 @@ class TestCheckAndAlert:
                 check_and_alert()
 
         mock_session.close.assert_called_once()
+
+
+class TestMain:
+    """Tests for the main() CLI entry point."""
+
+    @patch("app.alerts.freshness_alert.check_and_alert", return_value=False)
+    def test_exits_0_when_fresh(self, mock_alert):
+        """main() should exit 0 when data is fresh."""
+        import pytest
+
+        from app.alerts.freshness_alert import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    @patch("app.alerts.freshness_alert.check_and_alert", return_value=True)
+    def test_exits_1_when_stale(self, mock_alert):
+        """main() should exit 1 when data is stale."""
+        import pytest
+
+        from app.alerts.freshness_alert import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 1
+
+    @patch("app.alerts.freshness_alert.check_and_alert", side_effect=RuntimeError("DB unreachable"))
+    def test_exits_2_on_unexpected_error(self, mock_alert):
+        """main() should exit 2 on unexpected exceptions."""
+        import pytest
+
+        from app.alerts.freshness_alert import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 2
+
+    @patch(
+        "app.alerts.freshness_alert.check_and_alert",
+        side_effect=ConnectionError("network down"),
+    )
+    def test_exits_2_on_connection_error(self, mock_alert):
+        """main() should exit 2 for connection errors too."""
+        import pytest
+
+        from app.alerts.freshness_alert import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 2

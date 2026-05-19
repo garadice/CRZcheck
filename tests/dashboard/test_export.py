@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from app.dashboard.components.export import contracts_to_dataframe
+from app.dashboard.components.export import contracts_to_dataframe, export_dataframe
 
 
 def make_contract(**kwargs):
@@ -141,3 +141,95 @@ class TestContractsToDataframe:
         assert len(df) == 2
         assert df.iloc[0]["ID zmluvy"] == "A001"
         assert df.iloc[1]["ID zmluvy"] == "A002"
+
+
+class TestExportDataframe:
+    """Tests for export_dataframe() — CSV export with disclaimer header."""
+
+    def test_csv_contains_disclaimer_header(self):
+        """export_dataframe should produce CSV with Slovak disclaimer header."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        df = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
+
+        with patch("app.dashboard.components.export.st") as mock_st:
+            export_dataframe(df, "test_export")
+
+            mock_st.download_button.assert_called_once()
+            call_kwargs = mock_st.download_button.call_args[1]
+            csv_data = call_kwargs["data"]
+
+            assert "# CRZ Risk & Quality Monitor" in csv_data
+            assert "# Upozornenie:" in csv_data
+            assert "# Označenia nie sú dôkazom" in csv_data
+            assert "# Exportované:" in csv_data
+
+    def test_csv_contains_dataframe_content(self):
+        """CSV data should include actual DataFrame values."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        df = pd.DataFrame({"Name": ["Alice", "Bob"], "Score": [90, 85]})
+
+        with patch("app.dashboard.components.export.st") as mock_st:
+            export_dataframe(df, "scores")
+
+            call_kwargs = mock_st.download_button.call_args[1]
+            csv_data = call_kwargs["data"]
+            assert "Alice" in csv_data
+            assert "Bob" in csv_data
+            assert "Score" in csv_data
+
+    def test_filename_format_includes_timestamp(self):
+        """Download filename should include base name and timestamp."""
+        import re
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        df = pd.DataFrame({"x": [1]})
+
+        with patch("app.dashboard.components.export.st") as mock_st:
+            export_dataframe(df, "my_export")
+
+            call_kwargs = mock_st.download_button.call_args[1]
+            filename = call_kwargs["file_name"]
+            assert filename.startswith("my_export_")
+            assert filename.endswith(".csv")
+            assert re.match(r"my_export_\d{8}_\d{6}\.csv", filename)
+
+    def test_download_button_label_and_mime(self):
+        """download_button should use the correct label and MIME type."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        df = pd.DataFrame({"x": [1]})
+
+        with patch("app.dashboard.components.export.st") as mock_st:
+            export_dataframe(df, "test")
+
+            call_kwargs = mock_st.download_button.call_args[1]
+            assert call_kwargs["label"] == "📥 Stiahnuť CSV"
+            assert call_kwargs["mime"] == "text/csv"
+
+    def test_csv_separator_and_no_index(self):
+        """CSV should not include DataFrame index column."""
+        from unittest.mock import patch
+
+        import pandas as pd
+
+        df = pd.DataFrame({"A": [10]}, index=[42])
+
+        with patch("app.dashboard.components.export.st") as mock_st:
+            export_dataframe(df, "idx_test")
+
+            call_kwargs = mock_st.download_button.call_args[1]
+            csv_data = call_kwargs["data"]
+            lines = csv_data.strip().split("\n")
+            header_line = [line for line in lines if not line.startswith("#")][0]
+            assert "42" not in header_line
+            assert "A" in header_line

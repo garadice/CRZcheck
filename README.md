@@ -4,8 +4,8 @@
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://postgresql.org)
-[![Tests](https://img.shields.io/badge/tests-359%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
-[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?logo=pytest&logoColor=white)](./tests)
+[![Tests](https://img.shields.io/badge/tests-383%20passing-brightgreen?logo=pytest&logoColor=white)](./tests)
+[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen?logo=pytest&logoColor=white)](./tests)
 [![Ruff](https://img.shields.io/badge/lint-ruff%20clean-black?logo=ruff&logoColor=white)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -57,7 +57,7 @@ This is a **portfolio project** built to demonstrate end-to-end data engineering
 
 - **Data engineering** — ingestion pipeline with rate limiting, streaming XML parsing, upsert semantics, and idempotent re-processing
 - **Data quality** — a systematic flag system with documented methodology and compound severity logic
-- **Software engineering** — 359 tests, clean lint, type-safe configuration, schema migrations, Docker setup
+- **Software engineering** — 383 tests, 98% coverage, clean lint, type-safe configuration, schema migrations, Docker setup
 - **Domain expertise** — handles Slovak-specific data formats (European number formatting, IČO normalization, natural person heuristics)
 - **Communication** — bilingual documentation (Slovak dashboard for users, English docs for technical audience)
 
@@ -81,7 +81,7 @@ CRZ API ──► Downloader ──► XML Parser ──► Cleaning ──► P
 | HTTP | httpx (rate-limited) |
 | XML | lxml (streaming iterparse) |
 | Config | Pydantic Settings |
-| Testing | pytest (359 tests, 95% coverage) |
+| Testing | pytest (383 tests, 98% coverage) |
 | Linting | Ruff |
 
 For the full architecture with diagrams, data flow details, and database schema, see [docs/architecture.md](docs/architecture.md).
@@ -175,7 +175,7 @@ make lint       # Run ruff
 ### Verify
 
 ```bash
-make test   # All 359 tests should pass
+make test   # All 383 tests should pass
 make lint   # Ruff should report no issues
 ```
 

@@ -315,3 +315,239 @@ class TestFinishIngestionRun:
         assert run.status == "failed"
         assert run.error_message == "Test error"
         assert run.finished_at is not None
+
+
+class TestUpsertOrganizationNormName:
+    """Tests for upsert_organization() norm_name match branch (lines 172-177)."""
+
+    def test_norm_name_match_updates_ico(self, session):
+        """When matched by norm_name without ICO, later upsert with ICO should update it."""
+        org1 = upsert_organization(session, "Test Org", None)
+        session.flush()
+        assert org1.ico is None
+
+        org2 = upsert_organization(session, "Test Org", "12345678")
+        session.flush()
+
+        assert org1.id == org2.id
+        assert org2.ico == "12345678"
+        assert org2.display_name == "Test Org"
+
+    def test_norm_name_match_updates_display_name(self, session):
+        """norm_name match should update display_name when provided."""
+        # Same norm_name ("my company") but different clean_name (case preserved)
+        org1 = upsert_organization(session, "My Company", None)
+        session.flush()
+
+        org2 = upsert_organization(session, "MY COMPANY", None)
+        session.flush()
+
+        assert org1.id == org2.id
+        assert org2.display_name == "MY COMPANY"
+
+    def test_norm_name_match_updates_last_seen_at(self, session):
+        """norm_name match should update last_seen_at."""
+        org1 = upsert_organization(session, "Seen Org", None)
+        session.flush()
+        first_seen = org1.last_seen_at.replace(tzinfo=None)
+
+        org2 = upsert_organization(session, "Seen Org", None)
+        session.flush()
+
+        assert org1.id == org2.id
+        assert org2.last_seen_at.replace(tzinfo=None) >= first_seen
+
+    def test_norm_name_match_with_ico_and_name(self, session):
+        """norm_name match should update both ico and display_name."""
+        org1 = upsert_organization(session, "Alpha Corp", None)
+        session.flush()
+
+        # Different capitalization gives different clean_name but same norm_name
+        org2 = upsert_organization(session, "ALPHA CORP", "99998888")
+        session.flush()
+
+        assert org1.id == org2.id
+        assert org2.ico == "99998888"
+        assert org2.display_name == "ALPHA CORP"
+
+
+class TestUpsertSupplierNormName:
+    """Tests for upsert_supplier() norm_name match branch (lines 223-231)."""
+
+    def test_norm_name_match_updates_ico(self, session):
+        """When matched by norm_name without ICO, later upsert with ICO should update it."""
+        s1 = upsert_supplier(session, "Beta Ltd", None, "Old Address")
+        session.flush()
+        assert s1.ico is None
+
+        s2 = upsert_supplier(session, "Beta Ltd", "11112222", "New Address")
+        session.flush()
+
+        assert s1.id == s2.id
+        assert s2.ico == "11112222"
+        assert s2.display_name == "Beta Ltd"
+        assert s2.address == "New Address"
+
+    def test_norm_name_match_updates_is_np(self, session):
+        """norm_name match should update is_probable_natural_person."""
+        s1 = upsert_supplier(session, "Gamma Inc", None, None)
+        session.flush()
+        assert s1.is_probable_natural_person is True
+
+        s2 = upsert_supplier(session, "Gamma Inc", "55556666", None)
+        session.flush()
+
+        assert s1.id == s2.id
+        assert s2.is_probable_natural_person is False
+
+    def test_norm_name_match_updates_display_name(self, session):
+        """norm_name match should update display_name."""
+        # "Delta Co" and "DELTA CO" both normalize to "delta co"
+        s1 = upsert_supplier(session, "Delta Co", None, None)
+        session.flush()
+
+        s2 = upsert_supplier(session, "DELTA CO", None, None)
+        session.flush()
+
+        assert s1.id == s2.id
+        assert s2.display_name == "DELTA CO"
+
+    def test_norm_name_match_updates_address(self, session):
+        """norm_name match should update address when provided."""
+        s1 = upsert_supplier(session, "Epsilon SA", None, None)
+        session.flush()
+
+        s2 = upsert_supplier(session, "Epsilon SA", None, "Bratislava 123")
+        session.flush()
+
+        assert s1.id == s2.id
+        assert s2.address == "Bratislava 123"
+
+    def test_norm_name_match_updates_last_seen_at(self, session):
+        """norm_name match should update last_seen_at."""
+        s1 = upsert_supplier(session, "Zeta LLC", None, None)
+        session.flush()
+        first_seen = s1.last_seen_at.replace(tzinfo=None)
+
+        s2 = upsert_supplier(session, "Zeta LLC", None, None)
+        session.flush()
+
+        assert s1.id == s2.id
+        assert s2.last_seen_at.replace(tzinfo=None) >= first_seen
+
+
+class TestAcquireIngestionLockStaleCleanup:
+    """Tests for acquire_ingestion_lock() stale run cleanup (lines 261-263)."""
+
+    def test_stale_run_cleaned_up(self, session):
+        """Stale running runs (>6h) should be marked failed."""
+        from datetime import UTC, datetime, timedelta
+
+        stale_run = IngestionRun(
+            run_type="daily",
+            status="running",
+            started_at=datetime.now(UTC) - timedelta(hours=7),
+        )
+        session.add(stale_run)
+        session.flush()
+
+        acquire_ingestion_lock(session, "daily")
+
+        session.flush()
+        updated = session.execute(
+            select(IngestionRun).where(IngestionRun.id == stale_run.id)
+        ).scalar_one()
+        assert updated.status == "failed"
+        assert updated.finished_at is not None
+        assert updated.error_message is not None
+        assert "Automatick" in updated.error_message
+
+    def test_stale_run_allows_new_lock(self, session):
+        """After stale cleanup, a new lock should be acquirable."""
+        from datetime import UTC, datetime, timedelta
+
+        stale_run = IngestionRun(
+            run_type="daily",
+            status="running",
+            started_at=datetime.now(UTC) - timedelta(hours=8),
+        )
+        session.add(stale_run)
+        session.flush()
+
+        run_id = acquire_ingestion_lock(session, "daily")
+        assert run_id is not None
+        assert run_id != stale_run.id
+
+    def test_fresh_running_run_prevents_lock(self, session):
+        """A recent running run (<6h) should still prevent lock acquisition."""
+        acquire_ingestion_lock(session, "daily")
+        session.flush()
+
+        with pytest.raises(RuntimeError, match="already in progress"):
+            acquire_ingestion_lock(session, "daily")
+
+    def test_stale_cleanup_does_not_affect_other_run_types(self, session):
+        """Stale cleanup for 'daily' should not affect 'backfill' runs."""
+        from datetime import UTC, datetime, timedelta
+
+        stale_daily = IngestionRun(
+            run_type="daily",
+            status="running",
+            started_at=datetime.now(UTC) - timedelta(hours=7),
+        )
+        session.add(stale_daily)
+        session.flush()
+
+        run_id = acquire_ingestion_lock(session, "backfill")
+        assert run_id is not None
+
+
+class TestAcquireIngestionLockPostgresAdvisory:
+    """Tests for acquire_ingestion_lock() PostgreSQL advisory lock path (lines 270-278)."""
+
+    def test_postgres_lock_acquired(self, session):
+        """When pg_try_advisory_xact_lock returns True, lock should succeed."""
+        from unittest.mock import MagicMock, patch
+
+        # Temporarily set dialect name to trigger postgres code path
+        original_dialect_name = session.bind.dialect.name
+        session.bind.dialect.name = "postgresql"
+        original_execute = session.execute
+
+        def selective_execute(stmt, *args, **kwargs):
+            if "pg_try_advisory" in str(stmt):
+                result = MagicMock()
+                result.scalar.return_value = True
+                return result
+            return original_execute(stmt, *args, **kwargs)
+
+        try:
+            with patch.object(session, "execute", side_effect=selective_execute):
+                run_id = acquire_ingestion_lock(session, "daily")
+            assert run_id is not None
+        finally:
+            session.bind.dialect.name = original_dialect_name
+
+    def test_postgres_lock_denied_raises(self, session):
+        """When pg_try_advisory_xact_lock returns False, should raise RuntimeError."""
+        from unittest.mock import MagicMock, patch
+
+        original_dialect_name = session.bind.dialect.name
+        session.bind.dialect.name = "postgresql"
+        original_execute = session.execute
+
+        def selective_execute(stmt, *args, **kwargs):
+            if "pg_try_advisory" in str(stmt):
+                result = MagicMock()
+                result.scalar.return_value = False
+                return result
+            return original_execute(stmt, *args, **kwargs)
+
+        try:
+            with (
+                patch.object(session, "execute", side_effect=selective_execute),
+                pytest.raises(RuntimeError, match="Cannot acquire ingestion lock"),
+            ):
+                acquire_ingestion_lock(session, "daily")
+        finally:
+            session.bind.dialect.name = original_dialect_name
