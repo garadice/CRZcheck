@@ -15,6 +15,7 @@ from app.db.repository import (
     upsert_supplier,
 )
 from app.db.session import get_session_factory
+from app.flags.evaluate import run_flag_evaluation
 from app.ingestion.crz.download import CRZDownloader
 from app.ingestion.crz.parser import parse_xml
 from app.settings import settings
@@ -134,6 +135,22 @@ def run_ingestion(end_date: date | None = None) -> None:
             except Exception as e:
                 logger.warning(f"  {date_str}: FAILED - {e}")
                 continue
+
+        # --- Flag evaluation ---
+        logger.info("Running flag evaluation...")
+        eval_session = get_session_factory()()
+        try:
+            contracts_checked, flags_created = run_flag_evaluation(
+                eval_session, run_id, batch_size=500
+            )
+            logger.info(
+                f"Flag evaluation: {contracts_checked} contracts checked, "
+                f"{flags_created} flags created"
+            )
+        except Exception as e:
+            logger.error(f"Flag evaluation failed: {e}")
+        finally:
+            eval_session.close()
 
         finish_ingestion_run(
             status_session,
