@@ -13,7 +13,7 @@ INSTALL_DIR="/opt/crz-monitor"
 SERVICE_USER="crz"
 REPO_URL="https://github.com/garadice/CRZcheck.git"
 REQUIRED_VARS="DATABASE_URL POSTGRES_PASSWORD APP_ENV"
-MIN_DISK_GB=20
+MIN_DISK_GB=10
 
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $*"
@@ -210,7 +210,7 @@ Group=crz
 WorkingDirectory=/opt/crz-monitor
 ExecStart=/opt/crz-monitor/.venv/bin/streamlit run app/dashboard/Home.py \
     --server.port 8501 \
-    --server.address 127.0.0.1 \
+    --server.address 0.0.0.0 \
     --server.headless true \
     --browser.gatherUsageStats false
 Restart=on-failure
@@ -277,8 +277,7 @@ print_next_steps() {
     echo "  2. Start the dashboard:"
     echo "     systemctl start crz-dashboard"
     echo ""
-    echo "  3. Install Caddy (or nginx) as reverse proxy."
-    echo "     See the deploy/ directory for config examples."
+    echo "  3. Set up nginx as reverse proxy (see deployment checklist for config example)."
     echo ""
     echo "  4. Run the first ingestion:"
     echo "     sudo -u ${SERVICE_USER} ${INSTALL_DIR}/.venv/bin/python -m app.ingestion.jobs"

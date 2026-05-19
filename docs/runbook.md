@@ -343,9 +343,9 @@ on dashboard.
    ```bash
    psql $DATABASE_URL -c "SELECT 1"
    ```
-5. Check reverse proxy (Caddy) is running:
+5. Check reverse proxy (nginx) is running:
    ```bash
-   sudo systemctl status caddy
+   sudo systemctl status nginx
    ```
 
 ### Incident: Database Corruption / Data Loss

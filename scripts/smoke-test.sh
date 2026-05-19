@@ -68,11 +68,11 @@ check_dashboard() {
         fail "Streamlit dashboard not responding on :8501"
     fi
 
-    local caddy_domain="${CADDY_DOMAIN:-crz.bacimo.net}"
-    if curl -sf -o /dev/null "https://${caddy_domain}/_stcore/health" 2>/dev/null; then
-        pass "Dashboard reachable via Caddy (https://${caddy_domain})"
+    local nginx_domain="${NGINX_DOMAIN:-crzcheck.bacimo.net}"
+    if curl -sf -o /dev/null "https://${nginx_domain}/_stcore/health" 2>/dev/null; then
+        pass "Dashboard reachable via nginx (https://${nginx_domain})"
     else
-        warn "Dashboard not reachable via Caddy (may not be configured yet)"
+        warn "Dashboard not reachable via nginx (may not be configured yet)"
     fi
 }
 
