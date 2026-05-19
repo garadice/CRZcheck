@@ -7,6 +7,7 @@ from app.dashboard.components.connection import (
     show_disclaimer,
     show_freshness_banner,
 )
+from app.dashboard.components.constants import SEVERITY_EMOJI, SEVERITY_LABEL
 from app.dashboard.components.export import contracts_to_dataframe, export_dataframe
 from app.dashboard.components.filters import date_range_filter, flag_type_filter, severity_filter
 from app.dashboard.components.queries import get_flagged_contracts
@@ -28,14 +29,15 @@ show_disclaimer()
 # --- Load data ---
 session = get_session()
 try:
-    results = get_flagged_contracts(
-        session,
-        severity_filter=severity,
-        flag_code_filter=flag_code,
-        date_from=date_from,
-        date_to=date_to,
-        limit=200,
-    )
+    with st.spinner("Načítavam označené zmluvy…"):
+        results = get_flagged_contracts(
+            session,
+            severity_filter=severity,
+            flag_code_filter=flag_code,
+            date_from=date_from,
+            date_to=date_to,
+            limit=200,
+        )
 
     st.subheader(f"Výsledky: {len(results)} zmlúv")
 
@@ -52,9 +54,8 @@ try:
             sev = item["compound_severity"]
             flag_count = item["flag_count"]
 
-            # Severity color
-            sev_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(sev, "⚪")
-            sev_label = {"high": "vysoká", "medium": "stredná", "low": "nízka"}.get(sev, "žiadna")
+            sev_emoji = SEVERITY_EMOJI.get(sev, "⚪")
+            sev_label = SEVERITY_LABEL.get(sev, "žiadna")
 
             with st.container():
                 col1, col2 = st.columns([4, 1])
@@ -77,5 +78,7 @@ try:
                 st.divider()
     else:
         st.info("Žiadne označené zmluvy pre zvolené filtre.")
+except Exception:
+    st.error("❌ Nepodarilo sa načítať dáta. Skúste obnoviť stránku.")
 finally:
     session.close()

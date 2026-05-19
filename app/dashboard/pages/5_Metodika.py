@@ -3,7 +3,9 @@
 import streamlit as st
 
 from app.dashboard.components.connection import show_disclaimer, show_freshness_banner
+from app.dashboard.components.constants import SEVERITY_EMOJI, SEVERITY_LABEL
 from app.flags.definitions import FLAG_CATALOG
+from app.settings import settings
 
 st.set_page_config(page_title="Metodika", page_icon="📖", layout="wide")
 
@@ -30,10 +32,8 @@ st.divider()
 st.header("🚩 Zoznam oznamov")
 
 for code, defn in FLAG_CATALOG.items():
-    sev_color = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(defn.severity_default, "⚪")
-    sev_label = {"low": "nízka", "medium": "stredná", "high": "vysoká"}.get(
-        defn.severity_default, "?"
-    )
+    sev_color = SEVERITY_EMOJI.get(defn.severity_default, "⚪")
+    sev_label = SEVERITY_LABEL.get(defn.severity_default, "?")
 
     with st.expander(f"{sev_color} **{defn.name}** ({code}) — závažnosť: {sev_label}"):
         st.markdown(f"**Popis:** {defn.description}")
@@ -77,10 +77,12 @@ st.divider()
 
 st.header("📡 Zdroj dát")
 
-st.markdown("""
+window_days = settings.crz_rolling_window_days
+
+st.markdown(f"""
 - **Zdroj:** [Centrálny register zmlúv (CRZ)](https://www.crz.gov.sk/)
 - **Formát:** Denné XML exporty z `https://www.crz.gov.sk/export/YYYY-MM-DD.zip`
-- **Rozsah:** Posledných 90 dní (konfigurovateľné)
+- **Rozsah:** Posledných {window_days} dní (konfigurovateľné)
 - **Frekvencia aktualizácie:** Denne (automatizovaná ingestia)
 - **Analýza:** Len metadáta — nepoužívame PDF, OCR ani NLP.
 """)

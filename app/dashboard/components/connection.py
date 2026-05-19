@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 import streamlit as st
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 @st.cache_resource
@@ -46,21 +50,30 @@ def show_disclaimer():
 
 
 def show_freshness_banner():
-    """Show data freshness warning banner if data is stale."""
-    from app.flags.freshness import check_data_freshness
+    """Show data freshness warning banner if data is stale.
 
-    session = get_session()
+    Safe to call on every page — catches DB errors gracefully.
+    """
     try:
-        freshness = check_data_freshness(session)
-        if freshness["status"] == "stale":
-            st.error(
-                f"🔴 **{freshness['warning']}**",
-                icon="🔴",
-            )
-        elif freshness["status"] == "no_data":
-            st.info(
-                "ℹ️ Zatiaľ neboli načítané žiadne dáta. Spustite ingestiu.",
-                icon="ℹ️",
-            )
-    finally:
-        session.close()
+        from app.flags.freshness import check_data_freshness
+
+        session = get_session()
+        try:
+            freshness = check_data_freshness(session)
+            if freshness["status"] == "stale":
+                st.error(
+                    f"🔴 **{freshness['warning']}**",
+                    icon="🔴",
+                )
+            elif freshness["status"] == "no_data":
+                st.info(
+                    "ℹ️ Zatiaľ neboli načítané žiadne dáta. Spustite ingestiu.",
+                    icon="ℹ️",
+                )
+            # Cache for pages that need it (e.g. Stav dát)
+            st.session_state["_freshness_result"] = freshness
+        finally:
+            session.close()
+    except Exception:
+        logger.warning("Freshness check failed", exc_info=True)
+        # Don't crash the page — freshness is non-critical UI

@@ -22,14 +22,16 @@ show_disclaimer()
 session = get_session()
 try:
     # --- Overview stats ---
-    stats = get_overview_stats(session)
+    with st.spinner("Načítavam štatistiky…"):
+        stats = get_overview_stats(session)
 
     st.header("Štatistiky")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Zmluvy celkom", f"{stats['total_contracts']:,}")
     col2.metric("Označené zmluvy", f"{stats['total_flagged']:,}")
     col3.metric("Organizácie", f"{stats['total_organizations']:,}")
     col4.metric("Dodávatelia", f"{stats['total_suppliers']:,}")
+    col5.metric("Celková hodnota", f"{stats['total_value']:,.0f} EUR")
 
     if stats["total_contracts"] > 0:
         flag_pct = (stats["total_flagged"] / stats["total_contracts"]) * 100
@@ -39,9 +41,12 @@ try:
     st.divider()
     st.header("Aktuálnosť dát")
 
-    from app.flags.freshness import check_data_freshness
+    # Reuse cached result from show_freshness_banner() if available
+    freshness = st.session_state.get("_freshness_result")
+    if freshness is None:
+        from app.flags.freshness import check_data_freshness
 
-    freshness = check_data_freshness(session)
+        freshness = check_data_freshness(session)
 
     if freshness["status"] == "fresh":
         st.success(
@@ -87,5 +92,7 @@ try:
                 st.error(f"Chyba: {run.error_message}")
     else:
         st.info("Žiadne záznamy o ingestii.")
+except Exception:
+    st.error("❌ Nepodarilo sa načítať dáta. Skúste obnoviť stránku.")
 finally:
     session.close()

@@ -7,6 +7,7 @@ from app.dashboard.components.connection import (
     show_disclaimer,
     show_freshness_banner,
 )
+from app.dashboard.components.constants import SEVERITY_EMOJI
 from app.dashboard.components.export import contracts_to_dataframe, export_dataframe
 from app.dashboard.components.queries import (
     get_contract_attachments,
@@ -32,7 +33,8 @@ contract_id = st.text_input(
 if contract_id:
     session = get_session()
     try:
-        contract = get_contract_detail(session, contract_id)
+        with st.spinner("Načítavam detail zmluvy…"):
+            contract = get_contract_detail(session, contract_id)
 
         if contract is None:
             st.error(f"Zmluva s ID **{contract_id}** nebola nájdená.")
@@ -81,9 +83,7 @@ if contract_id:
             if flags:
                 st.subheader(f"🚩 Oznamy ({len(flags)})")
                 for flag in flags:
-                    sev_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(
-                        flag["severity"], "⚪"
-                    )
+                    sev_emoji = SEVERITY_EMOJI.get(flag["severity"], "⚪")
                     st.markdown(f"{sev_emoji} **{flag['name']}** ({flag['severity']})")
                     st.caption(flag.get("reason", ""))
             else:
@@ -121,6 +121,8 @@ if contract_id:
                     ]
                 )
                 export_dataframe(export_df, f"detail_{contract.crz_contract_id}")
+    except Exception:
+        st.error("❌ Nepodarilo sa načítať detail zmluvy. Skúste obnoviť stránku.")
     finally:
         session.close()
 else:

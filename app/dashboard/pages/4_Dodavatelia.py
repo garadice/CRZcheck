@@ -30,12 +30,13 @@ show_np = st.sidebar.checkbox(
 
 session = get_session()
 try:
-    suppliers = get_suppliers(
-        session,
-        search=search_query,
-        show_natural_persons=show_np,
-        limit=100,
-    )
+    with st.spinner("Načítavam dodávateľov…"):
+        suppliers = get_suppliers(
+            session,
+            search=search_query,
+            show_natural_persons=show_np,
+            limit=100,
+        )
 
     st.subheader(f"Výsledky: {len(suppliers)} dodávateľov")
 
@@ -87,5 +88,7 @@ try:
                     st.info("Bez IČO nie je možné zobraziť súvisiace zmluvy.")
     else:
         st.info("Žiadni dodávatelia.")
+except Exception:
+    st.error("❌ Nepodarilo sa načítať dáta. Skúste obnoviť stránku.")
 finally:
     session.close()

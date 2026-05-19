@@ -1,4 +1,4 @@
-.PHONY: help setup dev test lint format ingest dashboard db-up db-down migrate backup backup-list backup-verify restore restore-test
+.PHONY: help setup dev test lint format ingest dashboard db-up db-down migrate backup backup-list backup-verify restore restore-test check-freshness
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -33,6 +33,9 @@ ingest: ## Run CRZ data ingestion
 
 dashboard: ## Start Streamlit dashboard
 	.venv/bin/streamlit run app/dashboard/Home.py --server.port 8501
+
+check-freshness: ## Check data freshness (exit 1 if stale)
+	.venv/bin/python -m app.alerts.freshness_alert
 
 backup: ## Run database backup (optional — all data re-downloadable from CRZ API)
 	@bash scripts/backup.sh

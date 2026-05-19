@@ -12,7 +12,10 @@ from app.transforms.entities import is_probable_natural_person
 
 
 def export_dataframe(df: pd.DataFrame, filename: str) -> None:
-    """Export a DataFrame as CSV download with disclaimer header."""
+    """Export a DataFrame as CSV download with disclaimer header.
+
+    Uses UTF-8 BOM encoding for better Excel compatibility.
+    """
     timestamp = datetime.now(UTC)
     disclaimer = (
         "# CRZ Risk & Quality Monitor — Export dát\n"

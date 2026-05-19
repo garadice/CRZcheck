@@ -24,7 +24,8 @@ search_query = text_search_filter(key_prefix="org")
 
 session = get_session()
 try:
-    organizations = get_organizations(session, search=search_query, limit=100)
+    with st.spinner("Načítavam organizácie…"):
+        organizations = get_organizations(session, search=search_query, limit=100)
 
     st.subheader(f"Výsledky: {len(organizations)} organizácií")
 
@@ -75,5 +76,7 @@ try:
                     st.info("Bez IČO nie je možné zobraziť súvisiace zmluvy.")
     else:
         st.info("Žiadne organizácie.")
+except Exception:
+    st.error("❌ Nepodarilo sa načítať dáta. Skúste obnoviť stránku.")
 finally:
     session.close()

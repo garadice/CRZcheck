@@ -26,7 +26,8 @@ show_disclaimer()
 # --- Overview Stats ---
 session = get_session()
 try:
-    stats = get_overview_stats(session)
+    with st.spinner("Načítavam štatistiky…"):
+        stats = get_overview_stats(session)
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Zmluvy celkom", f"{stats['total_contracts']:,}")
@@ -46,13 +47,14 @@ try:
     search_query = text_search_filter(key_prefix="home")
 
     if search_query or date_from or date_to:
-        results = search_contracts(
-            session,
-            query=search_query,
-            date_from=date_from,
-            date_to=date_to,
-            limit=50,
-        )
+        with st.spinner("Vyhľadávam…"):
+            results = search_contracts(
+                session,
+                query=search_query,
+                date_from=date_from,
+                date_to=date_to,
+                limit=50,
+            )
         if results:
             shown = min(len(results), 20)
             if len(results) > 20:
@@ -76,5 +78,7 @@ try:
                     st.divider()
         else:
             st.warning("Žiadne výsledky.")
+except Exception:
+    st.error("❌ Nepodarilo sa načítať dáta. Skúste obnoviť stránku.")
 finally:
     session.close()

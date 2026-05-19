@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.dashboard.components.constants import SEVERITY_ORDER
 from app.db.models import (
     Contract,
     ContractAttachmentMetadata,
@@ -74,6 +75,29 @@ def search_contracts(
         stmt = stmt.where(Contract.publication_date <= date_to)
     stmt = stmt.limit(limit)
     return list(session.execute(stmt).scalars().all())
+
+
+def _severity_meets_filter(
+    flags: list[dict],
+    flag_count: int,
+    severity_filter: str,
+) -> bool:
+    """Check if a contract's flags meet the severity filter threshold.
+
+    A contract passes if:
+    - Its compound severity >= filter level, OR
+    - It has enough flags to trigger the override threshold (2 for medium, 3 for high)
+    """
+    sev = compound_severity(flags)
+    if sev == "none":
+        return False
+
+    filter_level = SEVERITY_ORDER.get(severity_filter, 0)
+    contract_level = SEVERITY_ORDER.get(sev, 0)
+
+    # Override: 3+ flags → always high, 2+ flags → at least medium
+    override_threshold = 3 if severity_filter == "high" else 2
+    return contract_level >= filter_level or flag_count >= override_threshold
 
 
 def get_flagged_contracts(
@@ -143,13 +167,8 @@ def get_flagged_contracts(
         flags = flags_by_contract.get(contract.crz_contract_id, [])
         sev = compound_severity(flags)
 
-        if severity_filter and sev != "none":
-            severity_order = {"low": 1, "medium": 2, "high": 3}
-            filter_level = severity_order.get(severity_filter, 0)
-            contract_level = severity_order.get(sev, 0)
-            override_threshold = 3 if severity_filter == "high" else 2
-            if contract_level < filter_level and flag_count < override_threshold:
-                continue
+        if severity_filter and not _severity_meets_filter(flags, flag_count, severity_filter):
+            continue
 
         results.append(
             {
