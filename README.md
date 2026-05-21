@@ -181,9 +181,15 @@ make lint   # Ruff should report no issues
 
 ---
 
-## Screenshots
+## Demo
 
-The dashboard is deployed at [crzcheck.bacimo.net](https://crzcheck.bacimo.net).
+The dashboard is live at [crzcheck.bacimo.net](https://crzcheck.bacimo.net).
+
+**Video walkthrough:**
+
+https://github.com/garadice/CRZcheck/blob/main/docs/demo-video.webm
+
+**Screenshots:**
 
 | |
 |---|
@@ -216,7 +222,7 @@ See [docs/limitations.md](docs/limitations.md) for the full analysis.
 
 ## Roadmap
 
-- [ ] Automated daily ingestion via cron / GitHub Actions
+- [x] Automated daily ingestion via cron
 - [ ] Historical backfill beyond the 90-day window
 - [ ] Statistical anomaly detection (price outliers, concentration metrics)
 - [ ] Cross-referencing with the Slovak Register of Legal Entities (RPO)

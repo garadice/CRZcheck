@@ -37,10 +37,18 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Node
+node_modules/
+package.json
+package-lock.json
+
 # Playwright artifacts
 .playwright-mcp/
 *.png
 !docs/screenshots/*.png
+
+# Playwright temp video files
+docs/page@*.webm
 
 # Database backups
 backups/
